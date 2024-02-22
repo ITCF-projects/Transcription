@@ -1,0 +1,4 @@
+apiVersion: v2
+name: transcribe
+description: A Helm chart for the Transcribe application
+version: 0.1.0

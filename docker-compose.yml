@@ -1,0 +1,79 @@
+version: '3.4'
+
+services:
+
+  frontend:
+    image: frontend
+    volumes:
+      - ./reactapp/.aspnet/https/reactapp.pem:/etc/certs/transcribe.crt
+      - ./reactapp/.aspnet/https/reactapp.key:/etc/certs/transcribe.key
+      - ./reactapp/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "4173:4173"
+    build:
+      context: ./reactapp/
+      dockerfile: Dockerfile
+    depends_on:
+      - api
+
+  api:
+    image: api
+    volumes:
+       - ./Testdata/Data:/transcriptions # Volume where transcription data and metadata is stored
+    environment:
+      - ASPNETCORE_URLS=https://+:44331;http://+:40080
+    ports:
+      - "44331:443"
+    build:
+      context: ./API/
+      dockerfile: Dockerfile
+    depends_on:
+      - itfc-transcription-queue
+
+ 
+  itfc-transcription-queue:
+    container_name: queuemanager
+    build:
+      context: ./TranscriptionWorker/
+    image: itcf-transcription/queuemanager:v1
+    environment:
+      - ITCF_TRANSCRIPTION_SCRIPT_START=Transcriptionworker.ps1
+      - TESTENV=${ApiKey}
+    volumes:
+      - ./Testdata/Data:/transcriptions # Volume where transcription data and metadata is stored
+      - ./TranscriptionWorker/config:/config
+    depends_on:
+      - transcribe-SV
+      - transcribe-EN
+
+  transcribe-SV:
+    container_name: transcribeSV
+    image: mcr.microsoft.com/azure-cognitive-services/speechservices/speech-to-text:4.5.0-amd64-sv-se
+    ports:
+      - "5010:5000"
+    environment:
+        - Eula=accept
+        - Billing=https://swedencentral.api.cognitive.microsoft.com/sts/v1.0/issuetoken
+    env_file:
+        - ./my_secrets.txt
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8g
+
+  transcribe-EN:
+    container_name: transcribeEN
+    image: mcr.microsoft.com/azure-cognitive-services/speechservices/speech-to-text:4.5.0-amd64-en-us
+    ports:
+      - "5020:5000"
+    environment:
+        - Eula=accept
+        - Billing=https://swedencentral.api.cognitive.microsoft.com/sts/v1.0/issuetoken
+    env_file:
+        - ./my_secrets.txt
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8g

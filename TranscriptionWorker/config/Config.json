@@ -1,0 +1,10 @@
+{
+    "UserBasePath":"/transcriptions/Users",
+    "IncommingTranscriptionPath":"/transcriptions/Incoming",
+    "Logpath":"/transcriptions/Logs",
+    "DeletionDays": 1,
+    "Languages":[
+        {"CountryCode":"sv-SE", "Url":"ws://transcribeSV:5000/"},
+        {"CountryCode":"en-US", "Url":"ws://transcribeEN:5000/"}
+    ]
+}

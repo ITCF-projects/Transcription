@@ -1,0 +1,31 @@
+version: '3.4'
+
+services:
+
+  frontend:
+    restart: always
+    volumes:
+      - /var/transcribe/certs/transcribe.crt:/etc/certs/transcribe.crt
+      - /var/transcribe/certs/transcribe.key:/etc/certs/transcribe.key
+ 
+  api:
+    restart: always
+    environment:
+      - ASPNETCORE_URLS=https://+:44331;http://+:40080
+    env_file:
+      - /var/transcribe/secret/env-api-cert.txt
+
+    volumes:
+      - /var/transcribe/transcriptions:/transcriptions
+      - /var/transcribe/certs:/etc/certs
+ 
+  itfc-transcription-queue:
+     restart: always
+     volumes:
+      - /var/transcribe/transcriptions:/transcriptions
+      - /var/transcribe/config:/config
+
+  transcribe-SV:
+     restart: always
+     env_file:
+        - /var/transcribe/secret/env-speech-key.txt

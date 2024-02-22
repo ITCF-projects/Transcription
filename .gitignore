@@ -1,0 +1,17 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/**/.vs
+/**/bin
+/**/obj
+*.user
+/**/.vscode
+/Testdata/*/**
+/my_secrets.txt
+TranscriptionWorker/.env
+access-token.txt
+API/appsettings.Development.json
+API/appsettings.Production.json
+/API/appsettings.Development.json
+/API/appsettings.Production.json

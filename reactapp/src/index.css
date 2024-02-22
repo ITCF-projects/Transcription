@@ -1,0 +1,57 @@
+:root {
+  font-family: "Segoe UI", "Segoe UI Web (West European)", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  max-width: 1280px;
+  width: calc(100% - 20px);
+  overflow: hidden;
+
+  margin: 0 auto;
+  background: white;
+  padding-top: 48px;
+
+  padding-left: 10px;
+  padding-right: 10px;
+
+  @media screen and (min-width: 768px) {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+  @media screen and (min-width: 1024px) {
+    width: 768px;
+    padding-left: 80px;
+    padding-right: 80px;
+  }
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #F5F8FC;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+

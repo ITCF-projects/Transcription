@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cfgm-transcribe-tw
+  namespace: {{ .Values.namespace }}
+data:
+  Config.json: {{ .Files.Get "../../TranscriptionWorker/config/Config.json" | indent 4 }}

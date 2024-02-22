@@ -1,0 +1,223 @@
+## Namespace
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-transcribe
+
+---
+
+# Persistent Volume
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ps-transcribe
+spec:
+  capacity:
+    storage: 50Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: standard
+  hostPath:
+    path: "/mnt/data/transcribe"
+
+---
+
+# Persistent Volume Claim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-transcribe
+  namespace: ns-transcribe
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: standard
+
+---
+
+# Secrets for the Transcription Worker
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secrets-transcribe-tw
+  namespace: ns-transcribe
+type: Opaque
+data:
+  az-cs-speech-to-text_api-key: <Base64 encoded API Key>
+
+---
+
+# ConfigMap for the Transcription Worker
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cfgm-transcribe-tw
+  namespace: ns-transcribe
+data:
+  Config.json: |
+    {
+      // Configuration details here
+    }
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ing-transcribe
+  namespace: ns-transcribe
+spec:
+  rules:
+  - host: <frontend-hostname>
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: svc-transcribe-frontend
+            port:
+              number: 443
+  - host: <api-hostname>
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: svc-transcribe-api
+            port:
+              number: 443
+
+---
+
+# Service for API
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-transcribe-api
+  namespace: ns-transcribe
+spec:
+  selector:
+    app: api
+  ports:
+    - protocol: TCP
+      port: 443
+      targetPort: 443
+
+---
+
+# Service for Frontend
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-transcribe-frontend
+  namespace: ns-transcribe
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 443
+      targetPort: 443
+
+
+---
+
+# Deploy the frontend
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: ns-transcribe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: <frontend-image>
+        ports:
+        - containerPort: 443
+        resources:
+          limits:
+            cpu: 500m       # 500 millicpu (.5 cpu or 1/2 of a core)
+            memory: 1Gi     # 1 GiB
+      imagePullSecrets:
+      - name: secrets-transcribe-frontend_regcred
+
+---
+
+# Deploy the API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: ns-transcribe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: api
+        image: <api-image>
+        ports:
+        - containerPort: 443
+        resources:
+          limits:
+            cpu: 500m       # 500 millicpu (.5 cpu or 1/2 of a core)
+            memory: 1Gi     # 1 GiB
+      imagePullSecrets:
+      - name: secrets-transcribe-api_regcred
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: speech-to-text
+  namespace: ns-transcribe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: speech-to-text
+  template:
+    metadata:
+      labels:
+        app: speech-to-text
+    spec:
+      containers:
+      - name: speech-to-text
+        image: <speech-to-text-image>
+        ports:
+        - containerPort: 5000
+        env:
+        - name: Eula
+          value: "accept"
+        - name: Billing
+          value: <Billing endpoint>
+        envFrom:
+        - secretRef:
+            name: secrets-transcribe-tw
+        resources:
+          limits:
+            cpu: 4000m      # 4000 millicpu (4 cpu or 4 cores), minimum required for speech-to-text
+            memory: 4Gi     # 4 GiB (minimum required for speech-to-text)

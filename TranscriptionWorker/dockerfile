@@ -1,0 +1,36 @@
+# syntax=docker/dockerfile:1
+# Bsaed on Ubuntu 20.04
+FROM msftspeech/spx:latest
+# Description metadata
+LABEL description="Dockerfile to run transcription queue management scripts."
+# Update package lists
+RUN apt-get update -y
+# Upgrade packages
+RUN apt-get upgrade -y
+# Add PowerShell repository and install PowerShell
+RUN apt install -y dirmngr lsb-release ca-certificates software-properties-common apt-transport-https curl
+RUN curl -fSsL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor | tee /usr/share/keyrings/powershell.gpg > /dev/null
+RUN echo "deb [arch=amd64,armhf,arm64 signed-by=/usr/share/keyrings/powershell.gpg] https://packages.microsoft.com/ubuntu/20.04/prod/ focal main" | tee /etc/apt/sources.list.d/powershell.list
+RUN apt-get update -y
+RUN apt install -y powershell
+# Add GStreamer for SPX
+RUN apt-get install -y libgstreamer1.0-0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly
+# Environment variables
+#   - Opt out of Microsoft telemetry
+ENV POWERSHELL_TELEMETRY_OPTOUT=1
+#   - Path to main script to run in scripts folder, defaults to 'main.ps1'
+#        ENV ITCF_TRANSCRIPTION_SCRIPT_START=main.ps1
+#   - ErrorAction, defaults to 'Stop'
+#        ENV ITCF_TRANSCRIPTION_SCRIPT_ERRORACTION="Stop"
+# Volume for transcription data
+VOLUME /transcriptions
+# Volume for config data
+VOLUME /config
+# Volume for transcription logs
+VOLUME /transcription_logs
+# Create our script dir
+RUN mkdir -p /scripts
+# Copy our scripts into dockerfile
+COPY ./scripts/ /scripts/
+# Set our entrypoint to PowerShell and run our script with the set error preference
+ENTRYPOINT pwsh -File "/scripts/${ITCF_TRANSCRIPTION_SCRIPT_START:-main.ps1}" -ErrorAction "${ITCF_TRANSCRIPTION_SCRIPT_ERRORACTION:-Stop}" ${ITCF_TRANSCRIPTION_SCRIPT_ARGS:-}

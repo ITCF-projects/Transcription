@@ -1,0 +1,9 @@
+**/.git
+**/.vs
+**/*.*proj.user
+**/bin
+**/obj
+**/secrets.dev.yaml
+**/values.dev.yaml
+LICENSE
+README.md

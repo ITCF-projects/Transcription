@@ -1,0 +1,101 @@
+---
+# Deploy the Frontend
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: {{ .Values.deployments.frontend.image }}
+        ports:
+        - containerPort: {{ .Values.services.frontend.targetPort }}
+        {{- if .Values.required.frontend.deployment.env }}
+        env:
+        {{- range $key, $value := .Values.required.frontend.deployment.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+        resources:
+          limits:
+            cpu: {{ .Values.deployments.frontend.cpuLimit }}
+            memory: {{ .Values.deployments.frontend.memoryLimit }}
+      imagePullSecrets:
+      - name: secrets-transcribe-frontend_regcred
+
+---
+# Deploy the API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: api
+        image: {{ .Values.deployments.api.image }}
+        ports:
+        - containerPort: {{ .Values.services.api.targetPort }}
+        resources:
+          limits:
+            cpu: {{ .Values.deployments.api.cpuLimit }}
+            memory: {{ .Values.deployments.api.memoryLimit }}
+      imagePullSecrets:
+      - name: secrets-transcribe-api_regcred
+
+---
+# Deploy Speech to Text
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: speech-to-text-sv-se
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: speech-to-text-sv-se
+  template:
+    metadata:
+      labels:
+        app: speech-to-text-sv-se
+    spec:
+      containers:
+      - name: speech-to-text-sv-se
+        image: {{ .Values.deployments.speechToText.image }}
+        ports:
+        - containerPort: {{ .Values.deployments.speechToText.port }} # TODO: Is this required? It should not be exposed externally, only internally... 
+        {{- if .Values.required.speechToText.deployment.env }}
+        env:
+        {{- range $key, $value := .Values.required.speechToText.deployment.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+        envFrom:
+        - secretRef:
+            name: secrets-transcribe-tw
+        resources:
+          limits:
+            cpu: {{ .Values.deployments.speechToText.cpuLimit }}
+            memory: {{ .Values.deployments.speechToText.memoryLimit }}

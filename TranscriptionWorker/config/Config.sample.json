@@ -1,0 +1,10 @@
+{
+    "UserBasePath":"/transcriptions/Users", // Where in container transcription Users are stored
+    "IncommingTranscriptionPath":"/transcriptions/Incoming",  // Where in container incoming transcriptions are stored
+    "Logpath":"/transcriptions/Logs", // Where in container transcription logs are stored
+    "DeletionDays": 1, // X number of days for auto-deletion of files
+    "Languages":[  // List of available containers for transcriptions
+        {"CountryCode":"sv-SE", "Url":"ws://transcribeSV:5000/"},  // Format of key-value pairs with supported language-code and URI of container
+        {"CountryCode":"en-US", "Url":"ws://transcribeEN:5000/"}
+    ]
+}
