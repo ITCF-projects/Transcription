@@ -26,14 +26,12 @@ ljudfilen och resultatet tas bort efter några dagar, men du kan naturligtvis ta
        specifika maskinen kan teoretiskt sett komma åt materialet, men de får inte göra det utan ditt medgivande. Personalen 
        omfattas av SFS 2009:400 och har skrivit på en ansvarsförbindelse för systemadministration. 
 - Får jag någon notis när min transkribering är klar? 
-    -  Nej, du får kolla regelbundet för uppdaterad status.  
+    -  Ja, det skickas en epostnotis vid varje avslutad transkribering innehållandes en anonymiserad enkel statustext.  
 - Min transkribering har "fastnat" i status köad, varför? 
     -  Det finns många, eller långa, transkriberingar före dig, det blir din tur tids nog. 
-- Jag har lagt upp flera transkriberingar, men de transkriberas inte i rätt ordning. 
-    -  Det är du som användare som köas, om du har laddat upp flera transkriberingar lottas den som transkriberas härnäst. 
 - Min transkribering har försvunnit. Varför? 
     - Transkriberingar raderas automatiskt en tid efter de transkriberats. Tiden för radering syns i transkriberingslistan och på din transkribering. Radering sker vanligtvis några dagar efter transkribering. Detta görs för att minimera information i transkriberingsplattformen. Du får ladda ner resultatet och spara det säkert i en egen lagringslösning. 
--   Vad betyder de olika nedladdningsformaten? 
+- Vad betyder de olika nedladdningsformaten? 
     -  SRT - Subtitle: Ett populärt filformat för undertexter till videofiler. Det är en textfil med tidsstämplar för när undertext ska visas i t.ex en film. 
     -  VTT - WebVTT: Också ett populärt filformat för undertexter till videofiler. Formatet liknar SRT. 
     -  TSV - Tab-separated: Tabseparerad fil. I praktiken en textfil med lite inledande formatinformation och all transkriberad text på en enda lång rad.  
@@ -46,10 +44,18 @@ ljudfilen och resultatet tas bort efter några dagar, men du kan naturligtvis ta
     - Förmågan att kunna koppla fraser till det som sägs i ljudfilen, beror på inspelningskvalitet och språk. 
       Våra tester har visat att användning av domän-ord funkar bäst vid transkribering av engelska ljudfiler. 
       Transkriberingsmotorn uppdateras några gånger per år, testa gärna funktionen igen om ett tag. 
--  Varför kan jag inte "dra-och-släppa" filer för transkribering. 
+- Varför kan jag inte "dra-och-släppa" filer för transkribering. 
     - Vi har valt denna lösning för att lättare kunna filtrera urvalet av filtyper till ljud- och videofiler. Det blir då tydligare vilka filer som transkriberingssystemet kan hantera. 
 - Vilka filtyper kan transkriberas? 
     - De flesta ljud- och videoformat, Vår rekommendation är att testa och se. Transkriberingsmotorn utvecklas kontinuerligt och använder f.n. programmet GStreamer i bakgrunden för att internt konvertera mellan format. 
-    - Om du har möjlighet att välja filformat och vill vara säker på att det ska fungera så använd filformatet wav. Det tar dock stor plats och mp3 är ofta ett bra alternativ. 
+    - Om du har möjlighet att välja filformat och vill vara säker på att det ska fungera så använd filformatet wav. Det tar dock stor plats och mp3 är ofta ett bra alternativ.
+- Min fil får resultat "Unsupported", vad ska jag göra?
+    - Verifiera att du kan spela upp filen på din egen dator, för att säkerställa att din fil är korrekt.
+    - Status "Unsupported" betyder att transkriberingsmotorn inte har stöd för den fil du laddat upp.
+        - Kontrollera om du redan har ett verktyg för att byta filformat installerat på din dator. 
+            - om inte kan du på en klienthanterad dator använda företagsportal för att installera verktyget VLC.
+                - Metoden för installation och byte av filformat ligger utanför ansvarsområdet för denna tjänst och du får vända dig till lämplig administratör på din egen institution för hjälp.
 - Hur stora filer kan jag transkribera? 
-  - Tanken är att du ska kunna transkribera ljudfiler som är max två timmar långa, så dela upp filer som är längre. Det finns en teknisk begränsning i filstorlek satt till 1 Gigabyte, så om din fil är större behöver den antingen delas eller kodas om till ett utrymmeseffektivare format. 
+  - Tanken är att du ska kunna transkribera ljudfiler som är max två timmar långa, så dela upp filer som är längre. Det finns en teknisk begränsning i filstorlek satt till 1 Gigabyte, så om din fil är större behöver den antingen delas eller kodas om till ett utrymmeseffektivare format.
+- Jag vill transkribera många filer, men kan bara ladda upp en fil i taget.
+    - Plattformens syfte är att vända sig till "sällananvändare med ett förhållandevis litet behov av transkribering" om ditt behov av transkribering är större och således faller utanför detta syfte bör du kontakta central IT för att skissa på en annan, lämpligare, lösning. Vi vill undvika ett scenario där tjänstens tillgänglighet blir lidande av att storkonsumenter förbrukar alla resurser.

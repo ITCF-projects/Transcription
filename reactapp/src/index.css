@@ -1,3 +1,5 @@
+@import '../node_modules/office-ui-fabric-core/src/sass/Fabric.scss';
+
 :root {
   font-family: "Segoe UI", "Segoe UI Web (West European)", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
   line-height: 1.5;

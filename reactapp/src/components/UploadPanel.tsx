@@ -22,6 +22,13 @@ const UploadPanel = (props: IUploadPanel): JSX.Element => {
   const [progress, setProgress] = useState<AxiosProgressEvent>();
   const [errorUpload, setErrorUpload] = useState<string>('');
   const [errorFile, setErrorFile] = useState<string>('');
+  const [costCenter, setCostCenter] = useState<string>('');
+  const [costActivity, setCostActivity] = useState<string>('');
+
+  const costCenterVisible = import.meta.env.VITE_BILLING_COSTCENTER_VISIBLE === "true";
+  const costCenterRequired = import.meta.env.VITE_BILLING_COSTCENTER_REQUIRED === "true";
+  const costActivityVisible = import.meta.env.VITE_BILLING_COSTACTIVITY_VISIBLE === "true";
+  const costActivityRequired = import.meta.env.VITE_BILLING_COSTACTIVITY_REQUIRED === "true";
 
   useEffect(() => {
     setUploading(false);
@@ -29,6 +36,8 @@ const UploadPanel = (props: IUploadPanel): JSX.Element => {
     setProgress(undefined);
     setSelectedFile(undefined);
     setSelectedLanguage('');
+    setCostCenter('');
+    setCostActivity('');
     setPhrases('');
     setErrorFile('');
     setErrorUpload('');
@@ -48,7 +57,7 @@ const UploadPanel = (props: IUploadPanel): JSX.Element => {
         type: "text/plain",
       });
 
-      uploadTranscription(selectedLanguage, selectedFile, phrasesFile, onUploadProgress)
+      uploadTranscription(selectedLanguage, selectedFile, phrasesFile, costCenter, costActivity, onUploadProgress)
         .then(() => {
           console.log("File uploaded: " + selectedFile.name)
           setUploading(false);
@@ -84,12 +93,18 @@ const UploadPanel = (props: IUploadPanel): JSX.Element => {
     return true;
   }
 
+  const isUploadDisabled =
+      !selectedFile || 
+      !selectedLanguage ||
+      (costCenterVisible && costCenterRequired && !costCenter) || 
+      (costActivityVisible && costActivityRequired && !costActivity);
 
   const lang_options: IDropdownOption[] = [
     { key: 'sv-se', text: 'Swedish' },
     { key: 'en-us', text: 'English' },
   ];  
 
+  
   return (
     <Panel 
       className={ styles.panel }
@@ -101,7 +116,7 @@ const UploadPanel = (props: IUploadPanel): JSX.Element => {
     >
       {!(uploading || uploaded) &&
       <div>
-        <Label>File</Label>
+        <Label>File *</Label>
         <input type="file" onChange={onFileChange} id='input-file' className={styles.selectFileInput} accept="audio/*, video/*"/>
         <label htmlFor='input-file'>
             <div className={styles.selectFileContainer}>
@@ -128,26 +143,42 @@ const UploadPanel = (props: IUploadPanel): JSX.Element => {
           style={{height: '150px'}} 
           placeholder='Enter one term per row'
           label='Terms'
-          value={ phrases } onChange={(_event, value) => setPhrases(value)}></TextField>
+          value={ phrases } onChange={(_event, value) => setPhrases(value)} />
 
         <Dropdown
           placeholder="Select language"
           label="Language"
           options={lang_options}
+          required={true}
           onChange={ (_event, option) => option && setSelectedLanguage(option?.key) }
         />
         
+        <Stack horizontal tokens={ { childrenGap: 24 }} >
+          { costCenterVisible &&
+            <TextField                              
+              label={'Cost center'}
+              required={ costCenterRequired }
+              value={ costCenter } onChange={(_event, value) => setCostCenter(value)} />
+          }
+          { costActivityVisible &&
+            <TextField                              
+              label='Cost activity'
+              required={ costActivityRequired }
+              value={ costActivity } onChange={(_event, value) => setCostActivity(value)} />
+          }
+        </Stack>
+
         <br/>
         <Stack horizontal horizontalAlign='end' tokens={ { childrenGap: 24 }} >
           <DefaultButton onClick={ () => props.onDismiss(false) }>Cancel</DefaultButton>
-          <PrimaryButton onClick={ onClickUpload } disabled={ !selectedFile || !selectedLanguage }>Send for transcription</PrimaryButton>
+          <PrimaryButton onClick={ onClickUpload } disabled={ isUploadDisabled }>Send for transcription</PrimaryButton>
         </Stack>
       </div>     
       }
 
       { (uploading || uploaded) && selectedFile &&
         <div>
-          <Label>File</Label>
+          <Label>File *</Label>
           <div className={styles.fileContainer}>
             <Stack horizontal verticalAlign='center' tokens={ { childrenGap: 8 }} >
               <Icon iconName='FileCode' style={{fontSize: '20px'}}/>

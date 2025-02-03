@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import styles from '../App.module.scss'
-import { DefaultButton, IconButton, DetailsListLayoutMode, CompoundButton, IColumn, Link, SelectionMode, ShimmeredDetailsList } from '@fluentui/react';
+import { ActionButton, CompoundButton, DefaultButton, DetailsListLayoutMode, IColumn, IconButton, Link, SelectionMode, ShimmeredDetailsList, Stack } from '@fluentui/react';
 import { AxiosError } from 'axios';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import styles from '../App.module.scss';
+import { ITranscriptionInfo } from '../App.types';
+import FileStatus from '../common/FileStatus';
+import TranscriptionHelper from '../common/TranscriptionHelper';
+import useApi from '../hooks/useApi';
 import DetailsPanel from './DetailsPanel';
 import UploadPanel from './UploadPanel';
-import TranscriptionHelper from '../common/TranscriptionHelper';
-import FileStatus from '../common/FileStatus';
-import useApi from '../hooks/useApi';
 
 
 const MyTranscriptions = (): JSX.Element => {
 
+  const navigate = useNavigate();
   const { getTranscriptions, downloadFile } = useApi();
 
   const [showUploadPanel, setShowUploadPanel] = useState<boolean>(false);
@@ -108,6 +111,13 @@ const MyTranscriptions = (): JSX.Element => {
         );          
       },
     },
+    { key: 'queuePosition', fieldName: 'queuePosition', name: 'Pos', minWidth: 40, maxWidth:60, isResizable: true,
+      onRender: (file: ITranscriptionInfo) => {        
+        return (
+          <div className={styles.detailsListCell}>{ file.queuePosition }</div>
+        );      
+      },
+     },    
     { key: 'created', fieldName: 'created', name: 'Upload date', minWidth: 100, maxWidth:120, isResizable: true,
       isSorted: true,
       isSortedDescending: true,
@@ -224,13 +234,18 @@ const MyTranscriptions = (): JSX.Element => {
         Create new transcription
       </CompoundButton>
 
-      <h2>My transcriptions</h2>
+      <Stack horizontal horizontalAlign='space-between' verticalAlign='center'>
+        <h2>My transcriptions</h2>
+        <ActionButton onClick={() => {navigate('/history');}}>View history</ActionButton>
+      </Stack>
+
       <ShimmeredDetailsList
         enableShimmer={showShimmer}
         shimmerLines={4}
         items={files || []}
         columns={columns}
         layoutMode={DetailsListLayoutMode.justified}
+        onItemInvoked={(item) => openDetailsPanel(item)}
         //selection={selection}
         //selectionPreservedOnEmptyClick={false}
         selectionMode={SelectionMode.none}

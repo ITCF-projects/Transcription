@@ -94,7 +94,7 @@ Show/tail log for container:
 
     podman logs -f transcribe_api_1
     podman logs -f transcribe_frontend_1
-    podman logs -f queuemanager  
+    podman logs -f folderwatcher  
     podman logs -f transcribeSV  
     podman logs -f transcribeEN
 
@@ -107,7 +107,7 @@ Generate service-files for all containers (as `transcribe` service account). Mak
 
     podman generate systemd --files --new --name transcribe_frontend_1
     podman generate systemd --files --new --name transcribe_api_1
-    podman generate systemd --files --new --name queuemanager
+    podman generate systemd --files --new --name folderwatcher
     podman generate systemd --files --new --name transcribeSV
     podman generate systemd --files --new --name transcribeEN
 
@@ -119,7 +119,7 @@ XDG_RUNTIME_DIR is needed for systemctl to run as a user.
 
     systemctl --user enable container-transcribe_frontend_1
     systemctl --user enable container-transcribe_api_1
-    systemctl --user enable container-queuemanager
+    systemctl --user enable container-folderwatcher
     systemctl --user enable container-transcribeSV
     systemctl --user enable container-transcribeEN
 

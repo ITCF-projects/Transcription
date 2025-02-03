@@ -7,7 +7,7 @@ Select your preferred IDE or editor, the steps below will vary depending on what
 - Create a file to hold your azure api key (for TranscriptionWorker)
 
         cd Transcribe
-        echo "APIKEY=mySecretAzureKey" > my_secrets.txt
+        echo "APIKEY=mySecretAzureKey" > env-speech-key.txt
 
 - Assuming you have a "bare bones Editor" for development you need to create developer certs and secrets. If using Visual Studio, this step is done automatically for you.
 

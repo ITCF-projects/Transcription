@@ -1,14 +1,15 @@
 import { useMsal } from '@azure/msal-react';
-import { InteractionRequiredAuthError } from '@azure/msal-browser';
-import axios, { AxiosProgressEvent, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { InteractionRequiredAuthError, SilentRequest } from '@azure/msal-browser';
+import axios, { AxiosHeaders, AxiosProgressEvent, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { ICostReport, IEntry, ITranscriptionInfo } from '../App.types';
 
 const useApi = () => {
 
   const { instance, accounts } = useMsal();
 
-  const getTokenAndCallApi = async (url: string, config?: AxiosRequestConfig, headers?: any): Promise<any> => {
+  const getTokenAndCallApi = async (url: string, config?: AxiosRequestConfig, headers?: AxiosHeaders): Promise<any> => {
 
-    const accessTokenRequest = {
+    const accessTokenRequest: SilentRequest = {
       scopes: [import.meta.env.VITE_AUTH_API_SCOPE],
       account: accounts[0],
     };
@@ -49,7 +50,7 @@ const useApi = () => {
     }
   }
 
-  const uploadTranscription = async (selectedLanguage: string, file: File, phrasesFile: File, onUploadProgress?: (progressEvent: AxiosProgressEvent) => void): Promise<any> => {
+  const uploadTranscription = async (selectedLanguage: string, file: File, phrasesFile: File, costCenter: string, costActivity: string, onUploadProgress?: (progressEvent: AxiosProgressEvent) => void): Promise<any> => {
 
     const data = new FormData();
     data.append("file", file)
@@ -61,11 +62,11 @@ const useApi = () => {
       onUploadProgress: onUploadProgress
     };
 
-    const headers: any = { 
+    const headers = new AxiosHeaders({       
       "Content-Type": "multipart/form-data" 
-    };
+    });
 
-    return await getTokenAndCallApi('/api/transcription?language=' + selectedLanguage, config, headers);
+    return await getTokenAndCallApi(`/api/transcription?language=${selectedLanguage}&costCenter=${costCenter}&costActivity=${costActivity}` , config, headers);
   }
 
 
@@ -111,14 +112,30 @@ const useApi = () => {
     return await getTokenAndCallApi('/api/transcription?identity=' + item.identity, config);
   }
 
-  const getTranscriptions = async (): Promise<any> => {
+  const getTranscriptions = async (): Promise<ITranscriptionInfo[]> => {
     return await getTokenAndCallApi('/api/transcriptions')
       .then(response => {
           return response.data;
       });
   }
 
+  const getCostReports = async (showAllHistory: boolean): Promise<ICostReport[]> => {
+    return await getTokenAndCallApi(showAllHistory ? '/api/costreport/admin' : '/api/costreport')
+      .then(response => {
+          return response.data;
+      });
+  }
+
+  const getIsAdmin = async (): Promise<boolean> => {
+    return await getTokenAndCallApi('/api/isadmin')
+      .then(response => {
+          return response.data;
+      });
+  }
+
   return { 
+    getCostReports,
+    getIsAdmin,
     getTranscriptions, 
     uploadTranscription,
     deleteTranscription,

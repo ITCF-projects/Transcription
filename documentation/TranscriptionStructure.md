@@ -11,17 +11,14 @@ Användarens identitet
     1.  transcription.json som innehåller status & metadata för transkriberingen.
     2. dictionary.txt som innehåller en ordlista för transkriberingen.
     3. Den uppladdade ljudfilen
-4. Efter detta skapar API:et en fil /Incoming/\<guid>.json som talar om för köhanteringen att det finns en ny transkribering.
-5. TranscriptionWorker pollar periodiskt /Incoming mappen efter nya filer
-6. TranscriptionWorker bearbetar nya filer och uppdaterar /Users/\<ePPN>/\<guid>/transcription.json med status och metadata.
-7. TranscriptionWorker levererar resultet till /Users/\<ePPN>/\<guid>
-8. TranscriptionWorker tar bort filen /Incoming/\<guid>.json
-9. TranscriptionWorker raderar filer som passerat bäst före datum (DeletionDays i config).
+4. FolderWatcher söker periodiskt efter alla förekomster av filen `transcription.json` i /Users/-mappens underkataloger
+5. FolderWatcher bearbetar nya filer i datum-ordning och uppdaterar /Users/\<ePPN>/\<guid>/transcription.json med status och metadata.
+6. FolderWatcher skapar och skriver transkriberingsresultatsfiler till /Users/\<ePPN>/\<guid>
+7. FolderWatcher meddelar slutanvändaren via epost när en transkribering färdigställs.
+8. Folderwatcher raderar filer som passerat bäst före datum (DeletionDays i config).
 
 ## Filstruktur
 ```
-/Incoming
-    ./<guid>.json
 /Users
     ./<ePPN>
         ./<guid>

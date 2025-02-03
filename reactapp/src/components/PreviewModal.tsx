@@ -5,6 +5,7 @@ import TranscriptionHelper from '../common/TranscriptionHelper';
 import styles from '../App.module.scss'
 
 import useApi from '../hooks/useApi';
+import { IEntry } from '../App.types';
 
 interface IPreviewModal {
   file?: IEntry,
@@ -65,7 +66,6 @@ const PreviewModal = (props: IPreviewModal): JSX.Element => {
       maxWidth: '1024px',
     },
     header: [
-      // eslint-disable-next-line deprecation/deprecation
       theme.fonts.xLarge,
       {
         flex: '1 1 auto',

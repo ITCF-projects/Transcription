@@ -1,5 +1,6 @@
-import { IContextualMenuItem, ContextualMenuItemType } from '@fluentui/react';
+import { IContextualMenuItem } from '@fluentui/react';
 import dayjs from 'dayjs';
+import { IEntry, ITranscriptionInfo } from '../App.types';
 
 export default class TranscriptionHelper {
 
