@@ -1,0 +1,2 @@
+# Add key for Azure speech-to-text containers
+# APIKEY=mySecretAzureKey

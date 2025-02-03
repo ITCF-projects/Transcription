@@ -5,8 +5,8 @@ services:
   frontend:
     image: frontend
     volumes:
-      - ./reactapp/.aspnet/https/reactapp.pem:/etc/certs/transcribe.crt
-      - ./reactapp/.aspnet/https/reactapp.key:/etc/certs/transcribe.key
+      - ./reactapp/.aspnet/https/reactapp.pem:/etc/pki/tls/certs/localhost.crt
+      - ./reactapp/.aspnet/https/reactapp.key:/etc/pki/tls/private/localhost.key
       - ./reactapp/nginx/default.conf:/etc/nginx/conf.d/default.conf
     ports:
       - "4173:4173"
@@ -21,41 +21,33 @@ services:
     volumes:
        - ./Testdata/Data:/transcriptions # Volume where transcription data and metadata is stored
     environment:
-      - ASPNETCORE_URLS=https://+:44331;http://+:40080
-    ports:
-      - "44331:443"
+      - ASPNETCORE_URLS=http://+:80
     build:
-      context: ./API/
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile.API
     depends_on:
-      - itfc-transcription-queue
+      - folderwatcher
 
- 
-  itfc-transcription-queue:
-    container_name: queuemanager
-    build:
-      context: ./TranscriptionWorker/
-    image: itcf-transcription/queuemanager:v1
-    environment:
-      - ITCF_TRANSCRIPTION_SCRIPT_START=Transcriptionworker.ps1
-      - TESTENV=${ApiKey}
+  folderwatcher:
+    image: folderwatcher
     volumes:
-      - ./Testdata/Data:/transcriptions # Volume where transcription data and metadata is stored
-      - ./TranscriptionWorker/config:/config
+       - "./Testdata/Data:/appdata"
+    build:
+      context: .
+      dockerfile: Dockerfile.FolderWatcher 
     depends_on:
       - transcribe-SV
       - transcribe-EN
+ 
 
   transcribe-SV:
     container_name: transcribeSV
-    image: mcr.microsoft.com/azure-cognitive-services/speechservices/speech-to-text:4.5.0-amd64-sv-se
-    ports:
-      - "5010:5000"
+    image: mcr.microsoft.com/azure-cognitive-services/speechservices/speech-to-text:4.8.0-amd64-sv-se
     environment:
         - Eula=accept
         - Billing=https://swedencentral.api.cognitive.microsoft.com/sts/v1.0/issuetoken
     env_file:
-        - ./my_secrets.txt
+        - ./env-speech-key.txt
     deploy:
       resources:
         limits:
@@ -64,14 +56,12 @@ services:
 
   transcribe-EN:
     container_name: transcribeEN
-    image: mcr.microsoft.com/azure-cognitive-services/speechservices/speech-to-text:4.5.0-amd64-en-us
-    ports:
-      - "5020:5000"
+    image: mcr.microsoft.com/azure-cognitive-services/speechservices/speech-to-text:4.8.0-amd64-en-us
     environment:
         - Eula=accept
         - Billing=https://swedencentral.api.cognitive.microsoft.com/sts/v1.0/issuetoken
     env_file:
-        - ./my_secrets.txt
+        - ./env-speech-key.txt
     deploy:
       resources:
         limits:

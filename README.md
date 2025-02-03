@@ -21,10 +21,10 @@
 
 
 ## Introduction
-The Transcribe solution is a multi-component application designed to transcribe audio files. It consists of a frontend, an API, a transcription worker, and uses external Speech to Text containers which are distributed by Microsoft.
+The Transcribe solution is a multi-component application designed to transcribe audio files. It consists of a frontend, an API, a folder watcher, and uses external Speech to Text containers which are distributed by Microsoft.
 
 ### Purpose
-The purpose of this solution is to provide an automated way to transcribe audio files into text in a secure and scalable way. The solution is designed to be deployed as standalone containers or in a container orchestrator such as Kubernetes.
+The purpose of this solution is to provide an automated way to transcribe audio files into text in a secure and scalable way. The solution is designed to be deployed as standalone containers.
 
 ### Target Audience
 This README is intended for developers, contributors and users who want to understand, build, run, host and contribute to the Transcribe solution.
@@ -33,14 +33,13 @@ This README is intended for developers, contributors and users who want to under
 
 * [API Documentation](API/README.md)
 * [Frontend Documentation](reactapp/README.md)
-* [Transcription Worker Documentation](TranscriptionWorker/README.md)
 * [Infrastructure Design](documentation/infrastructure/Infrastructure_Design.md)
 
 ## Solution Components
 
 * Frontend: The frontend of the Transcribe solution is a React application located in the [reactapp](reactapp) directory.
 * API: The API is a C# service located in the [API](API) directory.
-* Transcription Worker: The Transcription Worker is a service written in PowerShell that handles the transcription process. It's located in the [TranscriptionWorker](TranscriptionWorker) directory.
+* Folder Watcher: Handles the transcription process. It's located in the [FolderWatcher](FolderWatcher) directory.
 * Speech to Text Containers: The solution uses external Speech to Text containers. More information can be found [here](https://hub.docker.com/_/microsoft-azure-cognitive-services-speechservices-speech-to-text?tab=description).
 
 ## Authentication
@@ -58,19 +57,13 @@ Authorization for specific users to access the application can be configured in 
 * .NET SDK
 * Node.js and npm
 
-### Build Steps
-1. Build the API: `dotnet build API`
-2. Build the Frontend: `npm install && npm run build` in the `reactapp` directory.
-3. Build the Transcription Worker: `dotnet build TranscriptionWorker`
-4. Build the Docker images: `docker-compose build`
-
 ## Development and Contribution Guidelines
 
 ### How to Contribute
 Please read the [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute.
 
 ### How to Prepare the code for local development
-1. Create the file my_secrets.txt with content "APIKEY=mySecretAzureKey" in the project root.
+1. Create the file env-speech-key.txt with content "APIKEY=mySecretAzureKey" in the project root.
 2. Make sure you have a developer certificate for the API application. This is done automatically for you when building using Visual studio. To do this manually from command line: `dotnet dev-certs https -ep $APPDATA/ASP.NET/Https/API.pfx -p somepassword`
 3. Make sure to register the certificate password as a secret. This is done automatically for you when building using Visual studio. To do this manually from command line: `user-secrets set "Kestrel:Certificates:Development:Password" "somepassword" --project API`
 4. Make sure to have ADFS authentication properly configured (see separate guide)
@@ -79,30 +72,31 @@ Please read the [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contrib
  
 ### How to Run the Solution Locally
 1. Build and start the services: `docker compose -f docker-compose.yml -f .\docker-compose.override.yml up --build`
-2. Access the frontend at `http://localhost:4173`
+2. Access the frontend at `https://localhost:4173`
 3. Access the Backend at `https://localhost:44331/swagger/index.html`
 
 ## Deploying the Solution
 
 ### Requirements
-* An environment which can run Docker containers. This can be a local machine, a VM, or a container orchestrator such as Kubernetes.
+* An environment which can run Docker containers. This can be a local machine, a VM, or a container orchestrator.
 
-For more details, please refer to the [Infrastructure Design](documentation/infrastructure/Infrastructure_Design.md) and [Kubernetes Design](documentation/infrastructure/k8s/Kubernetes_Design.md) documents.
+For more details, please refer to the [Infrastructure Design](documentation/infrastructure/Infrastructure_Design.md) document.
 
 ### Deployment Steps
+This repository has a generic "getting it up and running for a developer" mindset. Any configuration outside that scope is considered site specific.  
+Site specific files are beyond the scope of this repository.
+As a result: Each site is responsible for creating and managing their own production release process, orchestration- and/or site specific configuration files outside of this repository.
 
 #### Infrastructure
 Each alternative deployment method has its own README file. Please refer to the README file for the deployment method you want to use.
-* Docker compose on ws2022: [README.md](documentation/infrastructure/docker-compose/README.md)
 * Podman: [Readme.md](documentation/infrastructure/podman/Readme.md)
 
-#### Application Deployment
+#### Application Deployment: 
+An example process is provided below:
 1. Build the Docker images: `docker-compose build`
 2. Push the Docker images to a container registry.
-3. Update the image tags in the orchestrator deployment configuration.\*
+3. Update the image tags in your orchestrator deployment configuration.
 4. Deploy the application.
 
-\* Follow the instructions in the README file for the deployment method you are using.
-
 ## Updating the Solution
-When new versions of the Speech to Text containers are released, update the image tag in the Kubernetes deployment configuration and redeploy the application.
+When new versions of the Speech to Text containers are released, update the image tag in the relevant docker file and redeploy the application.

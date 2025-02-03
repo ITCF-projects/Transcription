@@ -63,16 +63,18 @@ The accessible containers (Frontend and API) are exposed for necessary user inte
    - Accessibility: Should not be publicly accessible or accessible by end-users.
    - Purpose: Stores audio files and transcriptions, requiring controlled access for security.
 
-2. **Transcription Worker:**
+2. **FolderWatcher:**
    - Accessibility: Should not be accessible by end-users for security reasons.
    - Necessary Access:
      - Requires access to the common file area to retrieve and process audio files.
      - Needs connectivity to the Speech to Text container for transcription processing.
+   - Regularily update and verify spx container version here: https://hub.docker.com/r/msftspeech/spx/tags
 
 3. **Speech to Text Containers:**
    - Accessibility: Should not be directly accessible from the internet to maintain security.
    - Internet Access:
-     - Requires limited internet access for reporting billing information to Azure, following strict security protocols.
+     - Requires limited internet access for reporting billing information to Azure, following strict security protocols. The billing url used, is defined in the relevant docker-compose.yml-file.
+   - Regularily update and verify speech container version here: https://mcr.microsoft.com/product/azure-cognitive-services/speechservices/speech-to-text/tags
 
 
 ### Container Design
@@ -91,12 +93,12 @@ This section contains information about the containers that make up the Transcri
 - **Docker Image:** Custom image constructed from this [Dockerfile](../../api/Dockerfile).
 - **Port:** Exposed on public port `443`.
 - **Dependencies:** 
-  - Requires access to a common file area for storing audio files and transcriptions. Same file area that is used by the Transcription Worker.
+  - Requires access to a common file area for storing audio files and transcriptions. Same file area that is used by the Folder Watcher.
 
-#### Transcription Worker
+#### Folder Watcher
 - **Description:** A backend service that handles the transcription queue and processing logic.
-- **Location:** [Transcription Worker Repository](../../TranscriptionWorker/)
-- **Docker Image:** Built using the [Dockerfile](../../TranscriptionWorker/Dockerfile).
+- **Location:** [Folder Watcher Repository](../../FolderWatcher/)
+- **Docker Image:** Built using the [Dockerfile](../../FolderWatcher/Dockerfile).
 - **Port:** Not applicable (internal use only).
 - **Dependencies:** 
   - Requires access to a common file area for storing audio files and transcriptions. Same file area that is used by the API.

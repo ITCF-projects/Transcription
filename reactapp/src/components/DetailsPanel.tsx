@@ -10,6 +10,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import duration from 'dayjs/plugin/duration';
 import useApi from '../hooks/useApi';
 import PreviewModal from './PreviewModal';
+import { ITranscriptionInfo, IEntry } from '../App.types';
 dayjs.extend(relativeTime)
 dayjs.extend(duration)
 
@@ -160,25 +161,28 @@ const DetailsPanel = (props: IDetailsPanel): JSX.Element => {
             <CommandButton iconProps={ {iconName: 'Delete'}} onClick={ () => setShowConfirmDialog(true) }>Delete</CommandButton>
         </Stack>
 
-        <Stack horizontal wrap verticalAlign='center' tokens={ { childrenGap: 8 }} className={ styles.timeTable } >
-          <div>
-            <h3>Placed in queue</h3>
-            { TranscriptionHelper.formatDate(props.file.created) }
+        <div className={ styles.timeTable } >
+          <div className="ms-Grid" dir="ltr">
+            <div className="ms-Grid-row">
+              <div className="ms-Grid-col ms-sm6 ms-md3">
+                <h3>Placed in queue</h3>
+                { TranscriptionHelper.formatDate(props.file.created) }
+              </div>
+              <div className="ms-Grid-col ms-sm6 ms-md3">
+                <h3>Started</h3>
+                { TranscriptionHelper.formatDate(props.file.started) }
+              </div>
+              <div className="ms-Grid-col ms-sm6 ms-md3">
+                <h3>Ended</h3>
+                { TranscriptionHelper.formatDate(props.file.ended) }
+              </div>
+              <div className="ms-Grid-col ms-sm6 ms-md3">
+                <h3>Transcription time</h3>
+                { duration ? duration + ' minutes' : '-' }
+              </div>
+            </div>
           </div>
-          <div>
-            <h3>Started</h3>
-            { TranscriptionHelper.formatDate(props.file.started) }
-          </div>
-          <div>
-            <h3>Ended</h3>
-            { TranscriptionHelper.formatDate(props.file.ended) }
-          </div>
-          <div>
-            <h3>Transcription time</h3>
-            { duration ? duration + ' minutes' : '-' }
-          </div>
-        </Stack>
-
+        </div>
 
         <h2 className={styles.subheading}>Input</h2>
 
@@ -215,9 +219,29 @@ const DetailsPanel = (props: IDetailsPanel): JSX.Element => {
           </Stack>
         </div>
 
-        <Label>Language</Label>
-        <div className={styles.mb2}>{ TranscriptionHelper.languageName(props.file.language) }</div>
+        <div className={ styles.timeTable } >
+          <div className="ms-Grid" dir="ltr">
+            <div className="ms-Grid-row">
+              <div className="ms-Grid-col ms-sm6 ms-md3">
+                <h3>Language</h3>
+                <div className={styles.mb2}>{ TranscriptionHelper.languageName(props.file.language) }</div>
+              </div>
 
+              { import.meta.env.VITE_BILLING_COSTCENTER_VISIBLE === "true" &&
+                <div className="ms-Grid-col ms-sm6 ms-md3">
+                  <h3>Cost center</h3>
+                  <div>{ props.file.costCenter ?? '' }</div>
+                </div>
+              }
+              { import.meta.env.VITE_BILLING_COSTACTIVITY_VISIBLE === "true" &&
+                <div className="ms-Grid-col ms-sm6 ms-md3">
+                  <h3>Cost ativity</h3>
+                  <div>{ props.file.costActivity ?? '' }</div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
 
         <h2 className={styles.subheading}>Result</h2>
 

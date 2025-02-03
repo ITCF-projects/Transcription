@@ -8,6 +8,7 @@
 *.user
 /**/.vscode
 /Testdata/*/**
+/Testdata/**
 /my_secrets.txt
 TranscriptionWorker/.env
 access-token.txt
@@ -15,3 +16,5 @@ API/appsettings.Development.json
 API/appsettings.Production.json
 /API/appsettings.Development.json
 /API/appsettings.Production.json
+artifacts
+auditlog*.jsonl

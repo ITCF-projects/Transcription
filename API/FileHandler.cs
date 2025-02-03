@@ -1,41 +1,31 @@
 ﻿using Microsoft.AspNetCore.StaticFiles;
+using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Unicode;
+using Common;
 
 namespace API
 {
-    //TODO: Gör Filehandler (och andra filhanterande operationer i appen) testbar genom att gömma File- och Directorybaserade operationer bakom mockbarara interface och injecera dessa med DI
-    public class FileHandler
+    public class FileHandler(IHttpContextAccessor _context, IConfiguration _config, IFileSystem _fs, IAuditLog _auditLog)
     {
-        private readonly string folderPath;
-        private readonly string incomingPath;
-        private readonly string username;
-        private readonly string email;
-
-
-        /// <summary>
-        /// Konstruktor, kräver giltig användare från kontext samt giltig filsökväg i konfiguration.
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="config"></param>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="Exception"></exception>
-        public FileHandler(IHttpContextAccessor context, IConfiguration config)
+        private readonly string _username = _context?.HttpContext?.User?.Identity?.Name ?? throw new ArgumentException("Username is invalid", nameof(_context));
+        private readonly string _statusPath = _config["FileBasePath"] ?? throw new Exception("File basepath is invalid");
+        private readonly string _folderPath = _fs.Path.Combine(_config["FileBasePath"]!, _context?.HttpContext?.User?.Identity?.Name!);
+        private readonly string _email = _context?.HttpContext?.User?.FindFirstValue(ClaimTypes.Email) ?? "";
+        private readonly string _costReportPath = _config["CostReportPath"] ?? "";
+        private readonly bool _isGlobalAdmin = _context?.HttpContext?.User?.IsInRole(_config["GlobalAdminRole"] ?? "") ?? false;
+        private readonly List<string> _costCenterAdmin = _context?.HttpContext?.User?.Claims
+                .Where(x => x.Type == ClaimTypes.Role)
+                .Where(x => true /*TODO: add handling for claim prefix*/)
+                .Select(s => s.Value /*TODO: remove role prefix from string*/)
+                .ToList() ?? [];
+        private readonly JsonSerializerOptions _options = new()
         {
-            username = context?.HttpContext?.User?.Identity?.Name
-                ?? throw new ArgumentException("Username is invalid", nameof(context));
-
-            email = "kalle@kula.com" 
-                ?? context?.HttpContext?.User?.Claims.FirstOrDefault(x => x.Type == "TODO").Value
-                ?? throw new ArgumentException("Username is invalid", nameof(context));
-
-            folderPath = Path.Combine(
-                config["FileBasePath"] ?? throw new Exception("File basepath is invalid"),
-                username);
-            incomingPath = config["IncomingPath"] ?? throw new Exception("File basepath is invalid");
-        }
-
+            WriteIndented = true,
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.All),
+        };
+        
         /// <summary>
         /// Get a file
         /// </summary>
@@ -46,13 +36,13 @@ namespace API
         {
             if (!FileExists(identity))
                 throw new ArgumentException("invalid file", nameof(identity));
-            var path = Path.Combine(folderPath, identity);
-            var bytes = await File.ReadAllBytesAsync(path);
+            var path = _fs.Path.Combine(_folderPath, identity);
+            var bytes = await _fs.File.ReadAllBytesAsync(path);
             new FileExtensionContentTypeProvider().TryGetContentType(identity, out string? contentType);
-            return Results.File(bytes, contentType, Path.GetFileName(identity));
+            return Results.File(bytes, contentType, _fs.Path.GetFileName(identity));
         }
 
-        private async Task CreatePersonInfoFile(string path, string filename, string language)
+        private async Task CreatePersonInfoFile(string path, string filename, string originalName, string language, string costCenter, string costActivity)
         {
             var info = new
             {
@@ -61,15 +51,15 @@ namespace API
                 Ended = default(string),
                 Status = "new",
                 FileName = filename,
-                Created = DateTime.UtcNow
+                OriginalName = originalName,
+                Created = DateTime.UtcNow,
+                CostCenter = costCenter,
+                CostActivity = costActivity,
+                Email = _email
             };
-            var filePath = Path.Combine(path, "transcription.json");
-            var content = JsonSerializer.Serialize(info, new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.All),
-            });
-            await File.AppendAllTextAsync(filePath, content);
+            var filePath = _fs.Path.Combine(path, "transcription.json");
+            var content = JsonSerializer.Serialize(info, _options);
+            await _fs.File.AppendAllTextAsync(filePath, content);
         }
         
         /// <summary>
@@ -78,48 +68,26 @@ namespace API
         /// <param name="file"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public async Task<Guid> AddFile(IFormFile file, string language, IFormFile phrases)
+        public async Task<Guid> AddFile(IFormFile file, string language, string costCenter, string costActivity, IFormFile phrases)
         {
-            var fileName = file.GetCleanFilename();
+            var originalName = file.GetCleanFilename(_fs);
             var id = Guid.NewGuid();
+            var fileName = $"{id:N}{_fs.Path.GetExtension(originalName)}";
             if (file.Length > 0)
             {
-                var fileFolder = Path.Combine(folderPath, id.ToString());
-                Directory.CreateDirectory(fileFolder);
-                var filePath = Path.Combine(fileFolder, fileName);
-                using var filestream = File.Create(filePath);
-                using var phrasesStream = File.Create(Path.Combine(fileFolder, "dictionary.txt"));
+                var fileFolder = _fs.Path.Combine(_folderPath, id.ToString());
+                _fs.Directory.CreateDirectory(fileFolder);
+                var filePath = _fs.Path.Combine(fileFolder, fileName);
+                using var filestream = _fs.File.Create(filePath);
+                using var phrasesStream = _fs.File.Create(_fs.Path.Combine(fileFolder, "dictionary.txt"));
                 await file.CopyToAsync(filestream);
                 await phrases.CopyToAsync(phrasesStream);
-                await CreatePersonInfoFile(fileFolder, fileName, language);
-                await CreateIncomingEntry(id);
+                await CreatePersonInfoFile(fileFolder, fileName, originalName, language, costCenter, costActivity);
+                await _auditLog.LogAsync($"Assigned id {id} to {originalName} with filename {fileName}.");
             }
             return id;
         }
 
-        /// <summary>
-        /// Create incoming
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        private async Task CreateIncomingEntry(Guid id)
-        {
-            var item = new
-            {
-                TranscriptRequestID = id,
-                TranscriptRequestUserEPPN = username
-            };
-
-            var filePath = Path.Combine(incomingPath, $"{id}.json");
-            var content = JsonSerializer.Serialize(item, new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.All),
-            });
-            Directory.CreateDirectory(incomingPath);
-            await File.AppendAllTextAsync(filePath, content);
-        }
-        
         /// <summary>
         /// Lista alla användarens filer
         /// </summary>
@@ -127,51 +95,19 @@ namespace API
         /// <returns></returns>
         public IEnumerable<TranscriptionInfo> List()
         {
-            if (!Directory.Exists(folderPath))
-                return new List<TranscriptionInfo>();
+            if (!_fs.Directory.Exists(_folderPath))
+                return [];
 
-            return GetTranscriptions().Select(x =>
-                {
-                    var exclude = new[] { "dictionary.txt", "transcription.json", x.FileName };
-                    x.Results = FilesInPath(Path.GetDirectoryName(x.PathToSelf), exclude);
-                    return x;
-                });
+            return GetTranscriptions();
 
         }
-        private List<Entry> FilesInPath(string path, string[] filesToExclude)
-        {
-            return Directory.GetFiles(path, "*", SearchOption.AllDirectories)
-                .Where(x => !filesToExclude.Contains(Path.GetFileName(x)))
-                .Select(s => new FileInfo(s))
-                .Select(s => new Entry
-                {
-                    FileName = s.Name,
-                    Identity = s.FullName[(folderPath.Length + 1)..],
-                    Size = s.Length,
-                    LastWriteTimeUtc = s.LastWriteTimeUtc
-                }).ToList();
-        }
+        
         private List<TranscriptionInfo> GetTranscriptions()
         {
-            return Directory.GetFiles(folderPath, "transcription.json", SearchOption.AllDirectories)
-           .Select(s =>
-           {
-               try
-               {
-                   var item = JsonSerializer.Deserialize<TranscriptionInfo>(File.OpenRead(s))
-                   ?? throw new Exception($"{s} could not be read!");
-                   item.PathToSelf = s;
-                   item.Identity = Guid.Parse(Path.GetDirectoryName(s).Split(Path.DirectorySeparatorChar).Last());
-                   return item;
-               }
-               catch (Exception e)
-               {
-                   Console.WriteLine($"Failed to process{s} with error {e}");
-                   return new TranscriptionInfo(); 
-               }
-               
-           })
+            return _fs.Directory.GetFiles(_folderPath, "transcription.json", System.IO.SearchOption.AllDirectories)
+           .Select(s => TranscriptionInfo.Load(s,_fs))
            .Where(x => !string.IsNullOrWhiteSpace(x?.PathToSelf))
+           .Select(x => x.TransformForGui())
            .ToList();
         }
 
@@ -181,9 +117,9 @@ namespace API
         /// <param name="identity"></param>
         public void DeleteFolder(string identity)
         {
-            var path = Path.Combine(folderPath, identity);
-            if (Directory.Exists(path))
-                Directory.Delete(path, true);
+            var path = _fs.Path.Combine(_folderPath, identity);
+            if (_fs.Directory.Exists(path))
+                _fs.Directory.Delete(path, true);
         }
 
         /// <summary>
@@ -193,10 +129,10 @@ namespace API
         /// <exception cref="ArgumentException">Vid ogiltigt argument</exception>
         public void Delete(Guid identity)
         {
-            var path = Path.Combine(folderPath, identity.ToString());
-            if (!Directory.Exists(path))
+            var path = _fs.Path.Combine(_folderPath, identity.ToString());
+            if (!_fs.Directory.Exists(path))
                 throw new ArgumentException("invalid file", nameof(identity));
-            Directory.Delete(path, true);
+            _fs.Directory.Delete(path, true);
         }
 
         /// <summary>
@@ -207,10 +143,64 @@ namespace API
         private bool FileExists(string identity)
         {
             //TODO: överväg att byta till Path.GetFilename(identity) som filter (risk vs prestanda...)
-            var validFileIds = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories)
-                .Select(s => s[(folderPath.Length + 1)..]);
+            var validFileIds = _fs.Directory.GetFiles(_folderPath, "*.*", System.IO.SearchOption.AllDirectories)
+                .Select(s => s[(_folderPath.Length + 1)..]);
 
             return validFileIds.Contains(identity);
+        }
+
+        internal IList<CostReport> GetCostReport()
+        {
+            return CostReport.LoadAll(_costReportPath, _fs)
+                .Where(x => x.UserEPPN == _username)
+                .ToList();
+        }
+
+        internal IList<CostReport> GetCostReportForAdmin()
+        {
+            return CostReport.LoadAll(_costReportPath, _fs)
+                .Where(x => _isGlobalAdmin || _costCenterAdmin.Contains(x.CostCenter))
+                .ToList();
+        }
+
+        internal bool isGlobalAdmin()
+        {
+            return _isGlobalAdmin;
+        }        
+
+        internal IList<object> GetStatus()
+        {
+            if(!_isGlobalAdmin)
+                return [];
+
+            var items = _fs.Directory.GetDirectories(_statusPath)
+                .SelectMany(s => _fs.Directory.GetFiles(s, "*.*", System.IO.SearchOption.AllDirectories))
+                .Where(x => _fs.Path.GetFileName(x) != "transcriptions.jsonl")
+                .ToList();
+            return items.GroupBy(x => _fs.Path.GetDirectoryName(x) ?? "")
+                .Select(s => new
+                {
+                    EPPN = s.Key.Split(_fs.Path.DirectorySeparatorChar).Reverse().Skip(1).First(),
+                    Identity = s.Key.Split(_fs.Path.DirectorySeparatorChar).Last(),
+                    Created = Relative(_fs.Directory.GetCreationTime(s.Key??"")),
+                    UnixTime = (UInt32)(_fs.Directory.GetCreationTime(s.Key ?? "") - DateTime.UnixEpoch).TotalSeconds,
+                    Files = s.Select(t => _fs.Path.GetFileName(t)).ToList(),
+                    Info = TranscriptionInfo.Load(s.SingleOrDefault(x => x.EndsWith("transcription.json")), _fs)
+                })
+                .OrderBy(x => x.UnixTime)
+                .Select(s => s as object)
+                .ToList();
+        }
+        private static string Relative(DateTime? created)
+        {
+            var since = (DateTime.Now - created) ?? new TimeSpan();
+            if ((int)since.TotalDays > 1)
+                return $"{since.TotalDays:N0} days ago";
+            if ((int)since.TotalHours > 1)
+                return $"{since.TotalHours:N0} hours ago";
+            if ((int)since.TotalMinutes > 1)
+                return $"{since.TotalMinutes:N0} minutes ago";
+            return $"{since.TotalSeconds:N0} seconds ago";
         }
     }
 }

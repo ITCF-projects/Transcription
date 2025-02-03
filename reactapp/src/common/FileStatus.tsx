@@ -16,6 +16,10 @@ const FileStatus = (props: IFileStatus): JSX.Element => {
       iconName = 'Accept';
       className = styles.completed;
       break;
+    case 'transcribed': 
+      iconName = 'Accept';
+      className = styles.completed;
+      break;
     case 'transcribing': 
       iconName = 'Settings';
       className = styles.transcribing;
@@ -25,6 +29,10 @@ const FileStatus = (props: IFileStatus): JSX.Element => {
       className = styles.error;
       break;
     case 'error': 
+      iconName = 'Error';
+      className = styles.error;
+      break;
+    case 'unsupported': 
       iconName = 'Error';
       className = styles.error;
       break;

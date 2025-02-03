@@ -1,0 +1,14 @@
+﻿{
+  "CleanupIntervalSeconds": 900,
+  "DeleteDays": 5,
+  "FileBasePath": "/appdata/Users",
+  "SimultaneousTranscriptions": 10,
+  "UrlEn": "ws://transcribeEN:5000/",
+  "UrlSe": "ws://transcribeSV:5000/",
+  "CostCenterPath": "/appdata",
+  "EmailServer": "smtp.larosate.se",
+  "EmailFromAddress": "noreply@larosate.se",
+  "EmailBody": "Hi<br/> Please visit <a href=\"https://hemsida.larosate.se/\">https://hemsida.larosate.se/</a> for more information.<br>Regards<br>Your friendly transcription service",
+  "EmailSubject": "Transcription created {0}, completed with status {1}",
+  "AuditLogFile": "/appdata/Users/auditlog{date}-FolderWatcher.jsonl"
+}

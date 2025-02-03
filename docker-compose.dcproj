@@ -14,6 +14,6 @@
     </None>
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
-    <None Include="my_secrets.txt" />
+    <None Include="env-speech-key.txt" />
   </ItemGroup>
 </Project>
